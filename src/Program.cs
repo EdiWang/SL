@@ -2,7 +2,7 @@
 
 internal class Program
 {
-    private const int FrameDelay = 80;
+    private const int FrameDelay = 30;
     private const int TrainWidth = 85;
 
     static void Main(string[] args)
