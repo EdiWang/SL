@@ -2,33 +2,85 @@
 
 internal class Program
 {
+    private const int FrameDelay = 80;
+    private const int TrainWidth = 85;
+
     static void Main(string[] args)
+    {
+        try
+        {
+            RunTrainAnimation();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
+        finally
+        {
+            ResetConsole();
+        }
+    }
+
+    static void RunTrainAnimation()
+    {
+        ConfigureConsole();
+
+        int trainPosition = Console.WindowWidth;
+        int endPosition = -TrainWidth;
+
+        // Cache train lines for better performance
+        string[] train = GetTrainArt();
+        int startY = CalculateVerticalPosition(train.Length);
+
+        while (trainPosition > endPosition)
+        {
+            // Check for user interrupt
+            if (Console.KeyAvailable)
+            {
+                var key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.Escape || key.Key == ConsoleKey.Q)
+                    break;
+                if (key.Key == ConsoleKey.Spacebar)
+                    Console.ReadKey(true); // Pause until next key
+            }
+
+            Console.Clear();
+            DrawTrain(train, trainPosition, startY);
+            Thread.Sleep(FrameDelay);
+            trainPosition--;
+        }
+    }
+
+    static void ConfigureConsole()
     {
         Console.CursorVisible = false;
         Console.Clear();
 
-        int trainPosition = Console.WindowWidth;
-
+        // Set console size if possible (Windows only)
         try
         {
-            while (trainPosition > -60)
+            if (OperatingSystem.IsWindows() && Console.WindowWidth < 120)
             {
-                Console.Clear();
-                DrawTrain(trainPosition);
-                Thread.Sleep(80);
-                trainPosition--;
+                Console.SetWindowSize(Math.Min(120, Console.LargestWindowWidth),
+                                     Math.Min(30, Console.LargestWindowHeight));
             }
         }
-        finally
+        catch
         {
-            Console.CursorVisible = true;
-            Console.Clear();
+            // Ignore if unable to set window size
         }
     }
 
-    static void DrawTrain(int x)
+    static void ResetConsole()
     {
-        string[] train =
+        Console.CursorVisible = true;
+        Console.Clear();
+        Console.SetCursorPosition(0, 0);
+    }
+
+    static string[] GetTrainArt()
+    {
+        return
         [
             "                    (  ) (@@) ( )  (@)  ()    @@    O     @     O     @      O",
             "               (@@@)",
@@ -47,30 +99,44 @@ internal class Program
             " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|",
             "  \\_/      \\O=====O=====O=====O_/      \\_/               \\_/   \\_/    \\_/   \\_/",
         ];
+    }
 
-        int startY = (Console.WindowHeight - train.Length) / 2;
-        if (startY < 0) startY = 0;
+    static int CalculateVerticalPosition(int trainHeight)
+    {
+        int startY = (Console.WindowHeight - trainHeight) / 2;
+        return Math.Max(0, startY);
+    }
 
+    static void DrawTrain(string[] train, int x, int startY)
+    {
         for (int i = 0; i < train.Length; i++)
         {
-            if (startY + i < Console.WindowHeight)
-            {
-                Console.SetCursorPosition(0, startY + i);
+            int currentY = startY + i;
 
-                if (x < 0)
+            // Skip if outside console bounds
+            if (currentY >= Console.WindowHeight)
+                break;
+
+            Console.SetCursorPosition(0, currentY);
+
+            if (x < 0)
+            {
+                // Train moving off left side
+                int skip = Math.Abs(x);
+                if (skip < train[i].Length)
                 {
-                    int skip = Math.Abs(x);
-                    if (skip < train[i].Length)
-                    {
-                        Console.Write(train[i].Substring(skip));
-                    }
+                    string visiblePart = train[i][skip..];
+                    int maxWidth = Math.Min(visiblePart.Length, Console.WindowWidth);
+                    Console.Write(visiblePart[..maxWidth]);
                 }
-                else if (x < Console.WindowWidth)
-                {
-                    Console.SetCursorPosition(x, startY + i);
-                    int maxLength = Math.Min(train[i].Length, Console.WindowWidth - x);
-                    Console.Write(train[i].Substring(0, maxLength));
-                }
+            }
+            else if (x < Console.WindowWidth)
+            {
+                // Train fully or partially visible
+                Console.SetCursorPosition(x, currentY);
+                int availableWidth = Console.WindowWidth - x;
+                int drawLength = Math.Min(train[i].Length, availableWidth);
+                Console.Write(train[i][..drawLength]);
             }
         }
     }
