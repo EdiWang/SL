@@ -20,7 +20,7 @@ A fun C# console application that displays an animated ASCII art train moving ac
 ## Running
 
 ```bash
-cd src
+cd src/dotnet
 dotnet run
 ```
 
