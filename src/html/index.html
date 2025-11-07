@@ -4,8 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SL - Steam Locomotive Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        #train {
+            position: absolute;
+            color: rgb(215, 215, 215);
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: pre;
+            left: 100%;
+            animation: moveTrain 10s linear;
+        }
+
+        @keyframes moveTrain {
+            from {
+                left: 100%;
+            }
+            to {
+                left: -100%;
+            }
+        }
+
+        .smoke {
+            position: absolute;
+            color: #888;
+            font-size: 12px;
+            animation: fadeSmoke 1s ease-out forwards;
+        }
+
+        @keyframes fadeSmoke {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+    </style>
 </head>
 <body>
+    <div id="container"></div>
     
+    <script>
+        const trainArt = `
+                        (  ) (@@) ( )  (@)  ()    @@    O     @     O     @      O
+                   (@@@)
+               (    )
+             (@@@@)
+
+          (   )
+        ====        ________                ___________
+    _D _|  |_______/        \\__I_I_____===__|_________|
+     |(_)---  |   H\\________/ |   |        =|___ ___|      _________________
+     /     |  |   H  |  |     |   |         ||_| |_||     _|                \\_____A
+    |      |  |   H  |__--------------------| [___] |   =|                        |
+    | ________|___H__/__|_____/[][]~\\_______|       |   -|                        |
+    |/ |   |-----------I_____I [][] []  D   |=======|____|________________________|_
+  __/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_
+   |/-=|___|=O=====O=====O=====O   |_____/~\\___/          |_D__D__D_|  |_D__D__D_|
+    \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/
+`;
+
+        const container = document.getElementById('container');
+        let isRunning = false;
+
+        function createSmoke(x, y) {
+            const smoke = document.createElement('div');
+            smoke.className = 'smoke';
+            smoke.textContent = 'o';
+            smoke.style.left = x + 'px';
+            smoke.style.top = y + 'px';
+            container.appendChild(smoke);
+
+            setTimeout(() => {
+                smoke.remove();
+            }, 1000);
+        }
+
+        function runTrain() {
+            if (isRunning) return;
+            isRunning = true;
+
+            const train = document.createElement('div');
+            train.id = 'train';
+            train.textContent = trainArt;
+            container.appendChild(train);
+
+            const rect = train.getBoundingClientRect();
+            const smokeInterval = setInterval(() => {
+                const trainRect = train.getBoundingClientRect();
+                if (trainRect.right < 0) {
+                    clearInterval(smokeInterval);
+                    return;
+                }
+                // Create smoke from the smokestack
+                createSmoke(trainRect.left + 200, trainRect.top + 50);
+            }, 200);
+
+            // Remove train after animation
+            setTimeout(() => {
+                train.remove();
+                isRunning = false;
+            }, 10000);
+        }
+
+        // Auto-start on page load
+        window.addEventListener('load', () => {
+            setTimeout(runTrain, 500);
+        });
+
+        // Restart on click
+        document.addEventListener('click', () => {
+            if (!isRunning) {
+                runTrain();
+            }
+        });
+
+        // Restart on spacebar
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isRunning) {
+                e.preventDefault();
+                runTrain();
+            }
+        });
+    </script>
 </body>
 </html>
